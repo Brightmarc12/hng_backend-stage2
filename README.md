@@ -1,47 +1,48 @@
 # Backend Task: Country Currency & Exchange API
 
-This project is a RESTful API built with Node.js, Express, and Sequelize. It fetches country and currency exchange data from external sources, processes and enriches it, caches it in a MySQL database, and provides a full suite of CRUD endpoints to interact with the data. The API also includes a feature to dynamically generate a summary image of the cached data.
-
-## Features
-
-- **Data Aggregation**: Fetches data from two separate external APIs (`restcountries.com` and `open.er-api.com`).
-- **Data Caching**: Persists the processed data in a MySQL database to ensure high performance and avoid reliance on external services for every request.
-- **Dynamic GDP Calculation**: Computes an estimated GDP for each country based on population, a random multiplier, and the latest exchange rates.
-- **CRUD Operations**: Full support for Creating (refreshing), Reading, and Deleting country records.
-- **Filtering & Sorting**: The main `GET /countries` endpoint supports filtering by region and currency, as well as sorting by GDP.
-- **Dynamic Image Generation**: Automatically generates and serves a PNG summary image of the key database statistics upon a successful data refresh.
-- **Robust Error Handling**: Implements proper error handling for external API failures, database issues, and invalid client requests.
-
-## Tech Stack
-
-- **Backend**: Node.js, Express.js
-- **Database**: MySQL
-- **ORM**: Sequelize
-- **HTTP Client**: Axios
-- **Image Generation**: Sharp
+This project is a RESTful API built with Node.js, Express, and Sequelize. It fetches country and currency exchange data from external sources, processes and enriches this data, caches it in a MySQL database, and provides a suite of endpoints for CRUD operations and data retrieval. Additionally, it generates a dynamic summary image of the cached data.
 
 ---
 
-## API Endpoints
+### Key Features
 
-All endpoints are prefixed with `/api`.
+-   **Data Aggregation:** Fetches data from two separate external APIs ([RestCountries](https://restcountries.com/) and [ExchangeRate-API](https://www.exchangerate-api.com/)).
+-   **Data Caching:** Stores and manages the aggregated data in a MySQL database to ensure high performance and reliability.
+-   **Dynamic Computation:** Calculates an `estimated_gdp` for each country based on population and real-time exchange rates.
+-   **RESTful Endpoints:** Provides full CRUD (Create, Read, Delete) functionality for the cached country data.
+-   **Filtering & Sorting:** The main `GET /countries` endpoint supports filtering by region and currency, as well as sorting by GDP.
+-   **Dynamic Image Generation:** Creates and serves a PNG summary image displaying key statistics from the database.
+-   **Robust Error Handling:** Implements proper error handling for external API failures, database issues, and invalid client requests.
 
-### 1. Refresh Country Data
+---
 
-- **Endpoint**: `POST /countries/refresh`
-- **Description**: Triggers a full data refresh. It fetches the latest data from the external APIs, calculates new GDPs, and updates the local database cache. This process can take a few seconds.
-- **Success Response**:
-  - **Code**: `200 OK`
-  - **Body**:
+### Technology Stack
+
+-   **Backend:** Node.js, Express.js
+-   **Database:** MySQL
+-   **ORM:** Sequelize
+-   **HTTP Client:** Axios
+-   **Image Generation:** Sharp
+-   **Environment Variables:** Dotenv
+
+---
+
+### API Documentation
+
+The base URL for the API is `/api`.
+
+#### 1. Refresh Country Data
+-   **Method:** `POST`
+-   **Endpoint:** `/countries/refresh`
+-   **Description:** Fetches the latest data from the external APIs, updates the database cache, and generates a new summary image.
+-   **Success Response (200 OK):**
     ```json
     {
       "message": "Country data refreshed and cached successfully. Image generation started.",
       "countries_processed": 250
     }
     ```
-- **Error Response**:
-  - **Code**: `503 Service Unavailable`
-  - **Body**:
+-   **Error Response (503 Service Unavailable):**
     ```json
     {
       "error": "External data source unavailable",
@@ -49,43 +50,59 @@ All endpoints are prefixed with `/api`.
     }
     ```
 
-### 2. Get All Countries
+#### 2. Get All Countries
+-   **Method:** `GET`
+-   **Endpoint:** `/countries`
+-   **Description:** Retrieves a list of all countries from the database. Supports optional query parameters for filtering and sorting.
+-   **Query Parameters:**
+    -   `region` (e.g., `?region=Africa`)
+    -   `currency` (e.g., `?currency=USD`)
+    -   `sort` (e.g., `?sort=gdp_desc`)
+-   **Success Response (200 OK):**
+    ```json
+    [
+      {
+        "id": 1,
+        "name": "Nigeria",
+        "capital": "Abuja",
+        "region": "Africa",
+        /* ... other fields */
+      }
+    ]
+    ```
 
-- **Endpoint**: `GET /countries`
-- **Description**: Retrieves a list of all countries from the local database.
-- **Query Parameters**:
-  - `region=<string>`: Filters countries by region (e.g., `?region=Africa`).
-  - `currency=<string>`: Filters countries by currency code (e.g., `?currency=NGN`).
-  - `sort=<string>`: Sorts the results. Currently supports `gdp_desc` or `gdp_asc`.
-- **Success Response**:
-  - **Code**: `200 OK`
-  - **Body**: `[ { ...country_object_1 }, { ...country_object_2 } ]`
+#### 3. Get a Single Country
+-   **Method:** `GET`
+-   **Endpoint:** `/countries/:name`
+-   **Description:** Retrieves a single country by its name (case-insensitive).
+-   **Success Response (200 OK):**
+    ```json
+    {
+      "id": 1,
+      "name": "Nigeria",
+      /* ... other fields */
+    }
+    ```
+-   **Error Response (404 Not Found):**
+    ```json
+    { "error": "Country not found" }
+    ```
 
-### 3. Get a Single Country
+#### 4. Delete a Country
+-   **Method:** `DELETE`
+-   **Endpoint:** `/countries/:name`
+-   **Description:** Deletes a country record from the database by its name.
+-   **Success Response:** `204 No Content`
+-   **Error Response (404 Not Found):**
+    ```json
+    { "error": "Country not found" }
+    ```
 
-- **Endpoint**: `GET /countries/:name`
-- **Description**: Retrieves a single country by its name.
-- **Success Response**:
-  - **Code**: `200 OK`
-  - **Body**: `{ ...country_object }`
-- **Error Response**:
-  - **Code**: `404 Not Found`
-  - **Body**: `{ "error": "Country not found" }`
-
-### 4. Delete a Country
-
-- **Endpoint**: `DELETE /countries/:name`
-- **Description**: Deletes a country record from the database by its name.
-- **Success Response**:
-  - **Code**: `204 No Content`
-
-### 5. Get API Status
-
-- **Endpoint**: `GET /status`
-- **Description**: Provides metadata about the database cache.
-- **Success Response**:
-  - **Code**: `200 OK`
-  - **Body**:
+#### 5. Get API Status
+-   **Method:** `GET`
+-   **Endpoint:** `/status`
+-   **Description:** Returns the total number of countries in the database and the timestamp of the last successful refresh.
+-   **Success Response (200 OK):**
     ```json
     {
       "total_countries": 250,
@@ -93,27 +110,21 @@ All endpoints are prefixed with `/api`.
     }
     ```
 
-### 6. Get Summary Image
-
-- **Endpoint**: `GET /countries/image`
-- **Description**: Serves the `summary.png` image that was generated during the last successful refresh.
-- **Success Response**:
-  - **Code**: `200 OK`
-  - **Body**: The PNG image file.
-- **Error Response**:
-  - **Code**: `404 Not Found`
-  - **Body**: `{ "error": "Summary image not found. Please run a refresh first." }`
+#### 6. Get Summary Image
+-   **Method:** `GET`
+-   **Endpoint:** `/countries/image`
+-   **Description:** Serves the `summary.png` image generated during the last refresh.
+-   **Success Response:** A `image/png` file.
+-   **Error Response (404 Not Found):**
+    ```json
+    {
+      "error": "Summary image not found. Please run a refresh first."
+    }
+    ```
 
 ---
 
-## Local Setup & Installation
-
-### Prerequisites
-
-- Node.js (v16 or higher)
-- A running MySQL instance
-
-### Steps
+### How to Run Locally
 
 1.  **Clone the repository:**
     ```bash
@@ -126,26 +137,34 @@ All endpoints are prefixed with `/api`.
     npm install
     ```
 
-3.  **Set up environment variables:**
-    Create a `.env` file in the root of the project and copy the contents of `.env.example` (or the block below).
+3.  **Set up your MySQL database:**
+    -   Create a new MySQL database.
 
+4.  **Create a `.env` file** in the root directory and populate it with your database credentials. Use the `.env.example` file as a template:
     ```
-    # Database Configuration
     DB_HOST=your_database_host
     DB_USER=your_database_user
     DB_PASSWORD=your_database_password
     DB_NAME=your_database_name
-
-    # Server Configuration
     PORT=3000
     ```
-    Replace the placeholder values with your actual MySQL database credentials.
 
-4.  **Run the application:**
+5.  **Start the server:**
     ```bash
     node index.js
     ```
-    The server will start, connect to the database, and synchronize the models.
+    The API will be available at `http://localhost:3000`.
 
-5.  **Populate the database:**
-    Make a `POST` request to `http://localhost:3000/api/countries/refresh` using an API client like Postman or curl.
+---
+
+### Environment Variables
+
+The following environment variables are required for the application to run:
+
+| Variable      | Description                               |
+|---------------|-------------------------------------------|
+| `DB_HOST`     | The hostname of the MySQL database.       |
+| `DB_USER`     | The username for the database connection. |
+| `DB_PASSWORD` | The password for the database connection. |
+| `DB_NAME`     | The name of the database.                 |
+| `PORT`        | The port on which the server will run.    |
