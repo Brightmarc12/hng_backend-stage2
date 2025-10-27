@@ -135,7 +135,18 @@ exports.getAllCountries = async (req, res) => {
     }
 
     const countries = await Country.findAll(options);
-    res.status(200).json(countries);
+
+// Manually parse DECIMAL fields to floats for the JSON response
+    const formattedCountries = countries.map(country => {
+        const plainCountry = country.get({ plain: true });
+        return {
+            ...plainCountry,
+            exchange_rate: plainCountry.exchange_rate ? parseFloat(plainCountry.exchange_rate) : null,
+            estimated_gdp: plainCountry.estimated_gdp ? parseFloat(plainCountry.estimated_gdp) : null
+        };
+    });
+
+    res.status(200).json(formattedCountries);
 
   } catch (error) {
     console.error('Error fetching countries:', error);
@@ -153,9 +164,18 @@ exports.getCountryByName = async (req, res) => {
     });
 
     if (!country) {
-      return res.status(404).json({ error: 'Country not found' });
-    }
-    res.status(200).json(country);
+        return res.status(404).json({ error: 'Country not found' });
+      }
+      
+      // Manually parse DECIMAL fields
+    const plainCountry = country.get({ plain: true });
+    const formattedCountry = {
+        ...plainCountry,
+        exchange_rate: plainCountry.exchange_rate ? parseFloat(plainCountry.exchange_rate) : null,
+        estimated_gdp: plainCountry.estimated_gdp ? parseFloat(plainCountry.estimated_gdp) : null
+      };
+      
+    res.status(200).json(formattedCountry);
 
   } catch (error) {
     console.error('Error fetching country by name:', error);

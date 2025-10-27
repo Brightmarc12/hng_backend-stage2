@@ -15,7 +15,7 @@ app.use(express.json());
 
 // --- Import and Use Routes ---
 const countryRoutes = require('./src/routes/country.routes');
-app.use(countryRoutes); // We'll prefix all our routes with /api for good practice
+app.use(countryRoutes); // Remove the '/api' prefix
 
 // A simple test route
 app.get('/', (req, res) => {
