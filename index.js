@@ -15,12 +15,18 @@ app.use(express.json());
 
 // --- Import and Use Routes ---
 const countryRoutes = require('./src/routes/country.routes');
-app.use('/api', countryRoutes); // We'll prefix all our routes with /api for good practice
+app.use(countryRoutes); // We'll prefix all our routes with /api for good practice
 
 // A simple test route
 app.get('/', (req, res) => {
   res.send('API is running...');
 });
+
+// Catch-all route for 404 errors
+// This must be the last route defined
+app.use((req, res, next) => {
+    res.status(404).json({ error: 'Not Found' });
+  });
 
 
 
